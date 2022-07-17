@@ -12,14 +12,14 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 int servopin = 9;
 const int lights = 2;
 int photopin = A0;
-int lamp = 10;
-int pirPin = A1;
-int ledPin = 4;
+int lamp = 13;
+int pirPin = 3;
+//int ledPin = 4;
 
 //LM35
 int val;
 int sensor=A2;
-int readval;
+int readval = A3;
 int del=500;
 int red=7;
 float mv;
@@ -32,15 +32,17 @@ int photoval;
 int CurrentHour;
 int CurrentMinute;
 
+int motion;
+
 //delays
 int delr = 15;
 int delp = 250;
 
 // lights on time
-const int ONlightH = 22;
-const int ONlightM =44;
-const int OFFlightH = 22;
-const int OFFlightM = 45;
+const int ONlightH = 17;
+const int ONlightM =18;
+const int OFFlightH = 17;
+const int OFFlightM = 19;
 
 
 //drawing curtains
@@ -74,31 +76,37 @@ lcd.backlight();
   pinMode(lamp, OUTPUT); 
   digitalWrite(lamp, LOW);
 
-  pinMode(pirPin, OUTPUT);
-  digitalWrite(ledPin, LOW);
+  pinMode(pirPin, INPUT);
+  //digitalWrite(ledPin, LOW);
 
   pinMode(sensor,INPUT);
   pinMode(red,OUTPUT);
 
-attachInterrupt(0, lightON, RISING);
- 
-}
 
-void lightON(){
-digitalWrite(pirPin, HIGH);
-for(int i =0; i <= 1000; i++){
-  delay(100);
-}
-digitalWrite(pirPin, LOW);
+//LCD welcome message
+  lcd.setCursor(1, 0); 
+  lcd.print("Welcome to"); 
+  lcd.setCursor(1, 1);
+  lcd.print("WaDaniel");
+
+ 
 }
 
 
 void loop() {
-//LCD welcome message
-lcd.setCursor(1, 0); 
-  lcd.print("Congratulations"); 
-  lcd.setCursor(1, 1);
-  lcd.print("to you");
+
+    //motion sensor
+      motion = digitalRead(pirPin);
+
+      if(motion==1){
+        Serial.println("Motion detected");
+         digitalWrite(lamp, HIGH);
+       }
+      else{
+        Serial.println("No motion detected");
+         digitalWrite(lamp, LOW);
+       }
+      delay(500);
 
  DateTime now = rtc.now();
 
@@ -109,15 +117,23 @@ lcd.setCursor(1, 0);
   Serial.println(CurrentHour);
   Serial.println(CurrentMinute);
 
-    //security lights
+    //house lights
   if((CurrentHour==ONlightH) && (CurrentMinute == ONlightM)){
     digitalWrite(lights,HIGH);
     Serial.println("LIGHTS ON");
+
+    lcd.clear();
+    lcd.setCursor(1, 0); 
+    lcd.print("Magizani!"); 
+    lcd.setCursor(1, 1);
+    lcd.print("LIGHTS ON");
     }
 if((CurrentHour==OFFlightH) && (CurrentMinute == OFFlightM)){
       digitalWrite(lights,LOW);
       Serial.println("LIGHTS OFF");
+
     }
+
 
 //curtains
  if((CurrentHour==ONcurtH) && (CurrentMinute == ONcurtM)){
@@ -141,30 +157,39 @@ if((CurrentHour==OFFcurtH) && (CurrentMinute == OFFcurtM)){
     }
   delay(500); 
 
+ 
+
   // security lights:
 photoval = analogRead(photopin);
 Serial.println(photoval);
 delay(delp);
+//LCD phototransistor
+lcd.clear();
+lcd.setCursor(1, 0); 
+  lcd.print("Phototransistor"); 
+  lcd.setCursor(1, 1);
+  lcd.print(photoval);
 
-if(photoval>90){
+if(photoval>12.5){
 digitalWrite(lamp,LOW);
 }
-if(photoval<90){
+if(photoval<12.5){
   digitalWrite(lamp,HIGH);
 }
 
 //lm35
-val=analogRead(readval);
+val=analogRead(sensor);
 mv=(val/1024.0)*5000;
 cel=mv/10;
+Serial.println("temp=");
 Serial.println(cel);
 delay(del);
 
-if (val>48){
+if (val>54){
   digitalWrite(red,HIGH);
 }
 
-if (val<48){
+if (val<54){
   digitalWrite(red,LOW);
 }
 
